@@ -1,0 +1,76 @@
+/*******************************************************************************
+ * Copyright 2009, Clark N. Hobbie
+ * 
+ * This file is part of the CLIPC library.
+ * 
+ * The CLIPC library is free software; you can redistribute it and/or modify it
+ * under the terms of the Lesser GNU General Public License as published by
+ * the Free Software Foundation; either version 2.1 of the License, or (at
+ * your option) any later version.
+ * 
+ * The CLIPC library is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+ * or FITNESS FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public
+ * License for more details.
+ * 
+ * You should have received a copy of the Lesser GNU General Public License
+ * along with the CLIP library; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ *******************************************************************************/
+package com.lts.swing.table.rowmodel.transfer;
+
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.Transferable;
+import java.awt.datatransfer.UnsupportedFlavorException;
+import java.io.IOException;
+
+abstract public class TransferableAdapter implements Transferable
+{
+	protected abstract String[] getMimeTypes();
+	
+	protected Object myData;
+	protected DataFlavor[] myFlavors;
+	
+	
+	public TransferableAdapter (Object data)
+	{
+		initialize(data);
+	}
+	
+	protected void initialize (Object data)
+	{
+		try
+		{
+			String[] mime = getMimeTypes();
+			for (int i = 0; i < mime.length; i++)
+			{
+				myFlavors[i] = new DataFlavor(mime[i]);
+			}
+		}
+		catch (ClassNotFoundException e)
+		{
+		}
+	}
+	
+	public Object getTransferData(DataFlavor flavor) throws UnsupportedFlavorException,
+			IOException
+	{
+		return myData;
+	}
+
+	public DataFlavor[] getTransferDataFlavors()
+	{
+		return myFlavors;
+	}
+
+	public boolean isDataFlavorSupported(DataFlavor flavor)
+	{
+		for (int i = 0; i < myFlavors.length; i++)
+			if (myFlavors[i] == flavor)
+				return true;
+		
+		return false;
+	}
+
+}

@@ -1,0 +1,4 @@
+Modify ApplicationProperties to call loadDefaults in its constructor.
+Override getProperty to check for null or empty values.  In that situation, 
+check for a defined default value.  Return the default value instead of the 
+null value.

@@ -1,0 +1,108 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<title>The Default Properties Pattern</title>
+</head>
+<body>
+
+<H1>The Default Properties Properties Pattern</H1>
+
+<H2>Intent/Motivation</H2>
+<A name="intent">
+Simplify the way that properties obtain default values.
+</A>
+
+<h2>Motivation/Example</h2>
+<a name="motivation">
+You have an application that shows which directories contain the most storage space,
+perhaps for the user to figure out which directories to clean up.  The application can 
+create cache files so that all the directories do not have to be rescanned every time
+the program runs.
+  
+<P>
+In some situations, you may want to force the program to rescan the 
+directories, so you make this a configuration property called "use cache files."  Most 
+of the time, however, you want to use cache files, so the default value should be true. 
+</P>
+
+<P>
+In order to allow the default values to change when needed, it is desireable to reframe
+from forcing the developer to use Properties.getProperty(String name, String defaultValue)
+because it makes the code more difficult to maintain --- rather than a single location
+that defines the default value, multiple locations have that "knowledge."  
+</P>
+
+<P>
+The solution is to create a class that defines the following method:
+</P>
+
+<P>
+<CODE>
+<PRE>
+public String[][] getDefaultValues();
+public void loadDefaults();
+</PRE>
+</CODE>
+</P>
+
+<H4>loadDefaults</H4>
+This method gets the specification returned by getDefaultValues and processes it.  Each
+row in the array is itself an array that consists of a name and a value.  This method
+merely calls Properties.setProperty to set the named property to the specified value.
+
+<H4>getDefaultValues</H4>
+This method returns a "specification" that consists of several rows like the following:
+
+<P>
+<CODE>
+<PRE>
+	public class ApplicationProperties extends Properties
+	{
+		public String[][] getDefaultValues() {
+			return null;
+		}
+		
+		public void loadDefaults() 
+		{...}
+	}
+	
+	public class ScanProperties extends ApplicationProperties
+	{
+		public static final String[][] spec = {
+			"useCache",		"true"
+		};
+		
+		public String[][] getDefaultValues() {
+			return spec;
+		}
+	}
+</PRE>
+</CODE>
+</P>
+</a>
+
+<H2>Applicability</H2>
+<A name="Applicability">
+In situations where default values are not needed or where the default values are not
+going to change frequently, this pattern will provide limited value.  In situations 
+where developers must know the default value of a property when they use it, this 
+pattern will actually be more trouble then it is worth.
+</A>
+
+<H2>Structure</H2>
+A graphical representation of the pattern. Class diagrams and Interaction diagrams may be used for this purpose.
+
+<H2>Participants</H2>
+<UL>
+<LI>ApplicationProperties - The class defining getDefaultValues and loadDefaults</LI>
+<LI>SubclassProperties - The subclass of ApplicationProperties that defines the default values</LI>
+</UL>
+
+# Collaboration: A description of how classes and objects used in the pattern interact with each other.
+# Consequences: A description of the results, side effects, and trade offs caused by using the pattern.
+# Implementation: A description of an implementation of the pattern; the solution part of the pattern.
+# Sample Code: An illustration of how the pattern can be used in a programming language
+# Known Uses: Examples of real usages of the pattern.
+# Related Patterns: Other patterns that have some relationship with the pattern; discussion of the differences between the pattern and similar patterns.
+</html>

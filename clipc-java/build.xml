@@ -1,0 +1,59 @@
+<?xml version="1.0"?>
+<!--
+    Copyright 2009, Clark N. Hobbie
+    
+    This file is part of the CLIPC library.
+    
+    The CLIPC library is free software; you can redistribute it and/or modify it
+    under the terms of the Lesser GNU General Public License as published by
+    the Free Software Foundation; either version 2.1 of the License, or (at
+    your option) any later version.
+    
+    The CLIPC library is distributed in the hope that it will be useful, but
+    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+    or FITNESS FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public
+    License for more details.
+    
+    You should have received a copy of the Lesser GNU General Public License
+    along with the CLIP library; if not, write to the Free Software Foundation,
+    Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
+    
+ -->
+
+<project name="ipc" default="build" basedir=".">
+	<property name="verbose" value="true"/>
+    <property file="build.properties"/>
+	<property name="build.compiler" value="modern"/>
+	
+	<target name="build">
+		<mkdir dir="bin"/>
+		<javac source="1.6" target="1.6" srcdir="src/java" destdir="bin"/>
+	</target>
+
+ 	<target name="clean">
+		<delete dir="bin"/>
+		<delete dir="lib"/>
+		<delete dir="doc"/>
+ 		<delete file="clipc.jar"/>
+	</target>
+	
+	<target name="source" depends="clean">
+		<delete file="source.zip"/>
+		<zip basedir="${basedir}" file="source.zip">
+			<exclude name="**/*~"/>
+			<exclude name="**/*.swp"/>
+		</zip>
+	</target>
+	
+	<target name="jar" depends="build">
+		<description>Create the CLIPC jar file.</description>
+		
+		<jar file="clipc.jar" basedir="bin">
+			<fileset dir="misc">
+				<include name="COPYING"/>
+				<include name="COPYING.LESSER"/>
+			</fileset>
+		</jar>
+	</target>
+	
+</project>

@@ -1,0 +1,324 @@
+<?xml version="1.0" encoding="UTF-8"?><!--
+    Copyright 2009, Clark N. Hobbie
+    
+    This file is part of the CLIPC library.
+    
+    The CLIPC library is free software; you can redistribute it and/or modify it
+    under the terms of the Lesser GNU General Public License as published by
+    the Free Software Foundation; either version 2.1 of the License, or (at
+    your option) any later version.
+    
+    The CLIPC library is distributed in the hope that it will be useful, but
+    WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+    or FITNESS FOR A PARTICULAR PURPOSE.  See the Lesser GNU General Public
+    License for more details.
+    
+    You should have received a copy of the Lesser GNU General Public License
+    along with the CLIP library; if not, write to the Free Software Foundation,
+    Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
+    
+ -->
+
+<!-- ====================================================================== 
+     Aug 22, 2007 8:03:37 AM                                                        
+
+	An ANT script to create the util distribution.
+
+	The following targets are meant for external use
+	+ dist                    (default) Build the distribution
+	+ compile                 Compile all the .java files
+	+ source                  Create a source code distribution
+	+ clean                   remove temporary files
+	+ jar                     Create a JAR file for the distribution
+	+ zip                     create the distribution file
+
+	The following targets are meant for e
+	+ build                   invoke compile, jar, docs and misc
+	+ rebuild                 perform a clean, then a compile
+
+
+	The following are meant for use by the script itself
+	+ copy-binaries
+	+ create-directories
+	+ extract-libs
+	+ misc
+
+
+	create-directories
+
+	Create the temporary directories that the build uses.  For example, the 
+	images directory.
+
+
+	jar
+
+	This target creates a JAR file whose name is ${JARFILE} from the contents
+	of the distribution directory, ${images-dist}.
+
+
+	misc
+
+	Copy files to the distribution that do not fit into other categories.  For
+	example, batch and cmd files.
+
+
+	extract-libs
+
+	For all the JAR files in the ${LIBDIR} directory, unjar the contents into 
+	the root of ${IMAGES}.  Note that if a file has a relative path in the
+	JAR, then that same path will remain in the output directory.  That is, 
+	if you have a JAR with 
+
+		foo/bar/nerts/Whatever.class
+
+	Then the foo, bar and nerts directories will be created in the ${IMAGES}
+	directory.
+
+
+	copy-binaries
+
+	This copies the files from the ${BIN} directory to the ${IMAGES} 
+	directory.
+
+
+    NOMENCLATURE
+    
+    image
+    
+    This is a system of files that has the same contents and "layout" that 
+    an archive file such as a JAR or a ZIP has.  
+    
+    
+    jarfile
+    executable
+    
+    This is the file that the user executes, via java -jar, in order to run the
+    application.
+    
+    
+    distribution
+    distribution file
+    
+    This is a ZIP file that contains the executable and any supporting files.  For
+    example, classreach has a batch file called classreach.bat that invokes the 
+    JDK with the java -jar command.
+    
+    If there are any data files or the like that the program needs, the files should
+    be in the distribution.
+    
+    
+    source distribution
+    build distribution
+    build environment
+    
+    This is a ZIP file that contains an image of the source code and build environment
+    that the developer needs in order to be able to build the system.
+    
+     cnh                                                                
+     ====================================================================== -->
+<project name="project" default="distribution">
+    <description>
+            A build file to create the distribution JAR.
+    </description>
+
+	<property name="ROOT" value="."/>
+	
+	<property name="JARFILE" value="${ROOT}/util.jar"/>
+	
+	<!-- this is the directory where files are put in preparation for creating 
+	     the JAR.  
+	     
+	     .class files are a special case.  The results of compiles live in the
+	     ${ROOT}/bin directory but are also copied to ${TEMP}/bin during the build
+	-->
+	
+	<property name="TEMP" value="${ROOT}/temp"/>
+	
+	<!--
+	     This is the directory where .class files should go 
+	-->
+	<property name="SRC" value="${ROOT}/src"/>
+	
+	<!--
+	     This is the directory where third party JAR files and the like live.
+	-->
+	<property name="LIBDIR" value="${ROOT}/lib"/>
+	
+	<!--
+	     This variable specifies the directory where the JDK and related files 
+	     such as javac can be found.
+	-->
+	<property name="JDK" value="C:/files/java/jdk1.6.0_06"/>
+	
+	<!--
+	     This variable specifies the root of the images directory.  The images
+	     directory is where temporary files used for things like JAR file 
+	     images go.
+	-->
+	<property name="IMAGES" value="${TEMP}/images"/>
+	
+	<!--
+	     This is the directory where .class files should go 
+	-->
+	<property name="BUILD.BIN" value="${ROOT}/bin"/>
+	
+	<!--
+	     This variable contains the root of the image used to create the 
+	     JAR file.  That is the directory that has the same structure as the 
+	     JAR file that we are trynig to build.
+	-->
+	
+	<property name="IMAGES.JAR" value="${IMAGES}/jar"/>
+	
+	<!--
+		This variable contains the directory where .class files from "3rd party"
+		libraries should go.  For example, the files from util.jar
+		
+		The files are extracted out because regular java isn't quite bright enough
+		to use jar files contained in another jar files as part of the path.
+		
+		The files are not put in the same directory as those actually built by
+		the project so that it is clear which files are from the project and which
+		ones are from other projects or 3rd parties.
+	-->
+	
+	<property name="EXTRACTED" value="${TEMP}/lib"/>
+	
+	<!--
+	     This variable contains the directory where the root of the file system
+	     image of the distribution lives.
+	     
+	     The distribution ZIP file is the file that a user thinks of when they 
+	     want to get a copy of the program.
+	     
+	     The distribution file system image is that directory that contains the
+	     image of the contents of the distribution ZIP file.
+	-->
+	<property name="IMAGES.DISTRIBUTION.DIR" value="${IMAGES}/dist"/>
+	<property name="DIST" value="${IMAGES.DISTRIBUTION.DIR}"/>
+	
+	<property name="IMAGES.EXEC.FILE" value="${IMAGES.DISTRIBUTION.DIR}"/>
+	
+	<!--
+		This variable contains the directory where the root of the image for 
+		the source code distribution lives.
+	-->
+	<property name="IMAGES.SOURCE" value="${IMAGES}/src-dist"/>
+	
+	<!--
+	     This variable is the name and path to the distribution file.  The 
+	     distribution file is a single ZIP that contains all the files that the 
+	     user needs to run the program, including things like batch files, 
+	     data files, etc.
+	-->
+	<property name="DIST.FILE" value="${ROOT}/util-0.4.2.zip"/>
+	
+	
+	<property name="DIST.SOURCE.FILE" value="${ROOT}/util-0.2.1-src.zip"/>
+	
+	<!--
+		 This variable contains the directory where the root of the file system
+		 image of the source code distribution lives.  The source code 
+		 distribution is a ZIP file that contains the files that are used to 
+		 build the system.  
+		 
+		 It can be thought of as this directory, minus the temp directory and 
+		 and .class files.  
+	-->
+	<property name="DIST.SOURCE.DIR" value="${TEMP}/src" />
+	
+	<!--
+		 This variable contains the filespec for the file that should be 
+		 used as the manifest.mf file for the executable.
+	-->
+	<property name="MANIFEST" value="misc/MANIFEST.MF"/>
+	
+	<property name="SRCJAR" value="${TEMP}/src/${IMAGES.E}"/>
+	
+	
+    <!-- ================================= 
+          target: default              
+         ================================= -->
+    <target name="default" depends="distribution" />
+
+    <target name="compile" depends="extract-libs">    	
+    	<mkdir dir="${IMAGES.JAR}"/>
+    	
+    	<javac nowarn="on" destdir="${IMAGES.JAR}" debug="true">
+    		<compilerarg value="-nowarn"/>
+    		<src path="src"/>
+    		<classpath>
+    			<pathelement path="${EXTRACTED}"/>
+    		</classpath>
+    	</javac>
+
+    	<!-- the build will not copy .properties files and the like -->
+		<copy todir="${IMAGES.JAR}" overwrite="true">
+			<fileset dir="${SRC}">
+				<include name="**/*.properties"/>
+			</fileset>
+		</copy>
+    </target>
+	
+	<!-- extract out all the files from the JAR files that this application uses 
+	into ${EXTRACTED} -->
+	
+	<target name="extract-libs">
+		<mkdir  dir="${IMAGES.JAR}"/>
+		<unjar dest="${IMAGES.JAR}">
+			<fileset dir="${LIBDIR}">
+				<include name="**/*.jar"/>
+			</fileset>
+		</unjar>
+	</target>
+	
+	<target name="source">
+		<mkdir dir="${DIST.SOURCE.DIR}"/>
+		<jar destfile="${SRCJAR}" compress="false">
+			<fileset dir="${SRC}"/>
+			<fileset dir="util"/>
+		</jar>
+	</target>
+
+	<target name="jar">
+		<jar destfile="${JARFILE}">
+			<fileset dir="${IMAGES.JAR}"/>
+		</jar>
+	</target>
+
+	<target name="clean">
+		<delete dir="${TEMP}"/>
+		<delete file="${DIST.SOURCE.FILE}"/>
+		<delete file="${JARFILE}"/>
+	</target>
+
+	<target name="create-directories">
+		<mkdir dir="${IMAGES}"/>
+		<mkdir dir="${DIST}"/>
+	</target>
+		
+	<target name="build" depends="compile, jar">
+		<description>Create an image of the zip file in the images area</description>
+	</target>
+	
+	<target name="zip">
+		<description>build the actual distribution zipfile</description>
+		
+		<delete  dir="${IMAGES.DISTRIBUTION.DIR}"/>
+		<delete file="${DIST.FILE}"/>
+		
+		<mkdir dir="${IMAGES.DISTRIBUTION.DIR}"/>
+		
+		<copy todir="${IMAGES.DISTRIBUTION.DIR}" overwrite="true">
+			<fileset file="${JARFILE}"/>
+		</copy>
+
+		<zip basedir="${DIST}" destfile="${DIST.FILE}">
+			<fileset dir="${IMAGES.DISTRIBUTION.DIR}"/>
+		</zip>
+	</target>
+	
+	<target name="distribution" depends="create-directories, build, zip"/>
+	<target name="rebuild" depends="clean, compile"/>
+	<target name="redist" depends="clean, distribution"/>
+</project>

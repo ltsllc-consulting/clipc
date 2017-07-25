@@ -1,0 +1,4 @@
+* rename FIFOResult to FIFOState
+* move instance variables from FIFOImpl to FIFOState
+* Modify Semaphore.create to use some operation on the name itself to determine
+  the actual name for the semaphore, rather than using the current time.
